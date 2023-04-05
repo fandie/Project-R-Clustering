@@ -1,0 +1,94 @@
+## spliting Data
+
+ev_new$Drive <- as.factor(ev_new$Drive)
+str(ev_new)#Kolom Drive diubah menjadi Faktor (karena terdapat 3 bilangan sehingga menjadi multi binomial)
+
+ev_num <- ev_new [ ,2:25] ## mengambil karakter bertipe int atau num
+
+n_row <- dim(ev_num) [1]
+n_row
+
+# Spliting
+train_data <- sample(n_row,0.7*n_row)
+train_data[]
+
+train_data_ev <- ev_num[train_data, ]
+test_data_ev <- ev_num[-train_data, ]
+
+## Peformansi data Training
+lr_ev <- lm(data = train_data_ev)
+rmse(lr_ev, data = train_data_ev) #1.74589
+mae(lr_ev, data = train_data_ev) #1.400636
+
+## Peformansi data Testing
+
+rmse(lr_ev, data = test_data_ev) #2.53735
+mae(lr_ev, data = test_data_ev) #2.031891
+
+### Overfit karena hasil dari testing lebih besar dari pada data training
+
+## Peformansi data top speed dengan electric range
+model_lr_ev <- lm(data = train_data_ev,
+                  formula = Top.Speed ~ Electric.Range)
+summary(model_lr_ev)
+
+rmse(model_lr_ev, data = train_data_ev)
+mae(model_lr_ev, data = train_data_ev)
+
+rmse(model_lr_ev, data = test_data_ev)
+mae(model_lr_ev, data = test_data_ev)
+
+### dari hasil peformansi antara top speed dengan electric range model linier regresi sudah sesuai dan tidak overfit
+
+
+
+#--------------------Klasifikasi Multi Binomial--------------------------
+
+
+train_data_ev$Drive <- as.factor(train_data_ev$Drive) #Kolom Drive diubah menjadi Faktor (karena terdapat 3 bilangan sehingga menjadi multi binomial)
+logit <- glm(formula = Drive~ Battery.Capacity + Electric.Range + Total.Torque, data = train_data_ev,
+             family =binomial)
+summary(logit)
+
+
+## Prediksi Probabilitas
+
+prob_ev <- predict(logit, test_data_ev)
+prob_ev
+
+ev_response <- data.frame(prob_ev)
+ggplot(data = ev_response, aes(x=prob_ev)) +
+  geom_density()
+
+
+pred.logit <- factor(prob_ev > 0.10,
+                     labels = c("R","A"))
+ev_response
+ev_response$hasil_predict <- pred.logit
+
+## Decision Tree
+library(party)
+ev_dt <- ctree(formula = Drive~ Battery.Capacity + Electric.Range + Total.Torque, data = train_data_ev)
+summary(ev_dt)
+
+pred_dt_train <- predict(ev_dt, train_data_ev)
+summary(pred_dt_train)
+
+pred_dt_test <- predict(ev_dt, test_data_ev)
+summary(pred_dt_test)
+
+## Rondom Forest
+
+ev_rf <- randomForest(formula=Drive~ Battery.Capacity + Electric.Range + Total.Torque,
+                   data=train_data_ev)
+pred_rf_train <- predict(ev_rf, train_data_ev)
+
+pred_rf_train <- predict(ev_rf, train_data_ev)
+summary(pred_dt_train)
+
+pred_rf_test <- predict(ev_dt, test_data_ev)
+summary(pred_rf_test)
+
+ev_rf$ntree
+
+
